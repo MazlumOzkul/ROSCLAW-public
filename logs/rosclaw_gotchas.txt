@@ -1,0 +1,56 @@
+ROSClaw Bu Kuruluma Ozel Kritik Notlar (Jazzy + Gazebo Sim / ros_gz)
+
+/CMD_VEL MESAJ FORMATI - EN KRITIK NOKTA:
+Bu kurulumda (ROS2 Jazzy + Gazebo Sim / ros_gz_bridge ile TurtleBot3) /cmd_vel
+topic'i DUZ geometry_msgs/Twist DEGIL, geometry_msgs/msg/TwistStamped bekler.
+Duz Twist formati ({"linear":..., "angular":...}) gonderilirse mesaj SESSIZCE
+yok sayilir - hicbir hata gelmez, robot da hareket etmez. Bu yuzden MUTLAKA:
+
+ros2_publish("/cmd_vel",
+    {"header": {}, "twist": {"linear": {"x": 0.2, "y": 0.0, "z": 0.0},
+                              "angular": {"x": 0.0, "y": 0.0, "z": 0.0}}},
+    "geometry_msgs/msg/TwistStamped")
+
+Dogru mu diye kontrol etmek icin: `ros2 topic info /cmd_vel -v` calistir,
+"Type:" satirinda TwistStamped mi Twist mi yazdigina bak.
+
+ROS2_SUBSCRIBE DONUS DEGERI:
+ros2_subscribe(topic) fonksiyonu DOGRUDAN mesaj sozlugunu (dict) dondurur -
+sarmalayici zarf (status/topic) degil. Ornek: /odom okurken pozisyon
+veri["pose"]["pose"]["position"]["x"] seklinde erisilir. NOKTA/ATTRIBUTE
+erisimi (veri.pose.pose...) CALISMAZ, cunku hepsi Python dict'idir, ROS2
+mesaj nesnesi degildir (roslibpy/rosbridge JSON uzerinden calisir).
+
+BASIT MESAFE GOREVLERI ICIN KAPALI-DONGU KULLANMA:
+"X metre ileri git" gibi basit gorevlerde odometry okuyup pozisyon hesaplayan
+karmasik kapali-dongu kod yazmaya CALISMA - kucuk/quantize yerel modeller
+(qwen2.5-coder:7b gibi) bu tur kodda hata yapip kendini duzeltemeyebiliyor
+(dict/attribute karisikligi). Bunun yerine: sabit hiz + time.sleep(sure) +
+durdurma seklinde acik-donguyle (open-loop) hareket et. Daha guvenilir.
+
+SANDBOX KISITLAMALARI:
+Uretilen kod kisitli bir Python ortaminda calisir: import ifadeleri
+CALISMAZ (guvenlik icin __import__ builtin'i kaldirilmis durumda). Sadece
+onceden tanimli araclar (ros2_publish, ros2_subscribe, vb.) ve `time`
+modulu hazir haldedir, baska hicbir modul kullanilamaz.
+
+GAZEBO PAKET ADLARI (Jazzy'de DEGISTI):
+Eski ROS2 surumlerinde (Humble/Iron) kullanilan "gazebo-ros-pkgs",
+"gazebo-ros2-control" paket adlari Jazzy'de YOK. Jazzy yeni Gazebo (Gazebo
+Sim, eski adiyla Ignition) kullanir, dogru paketler:
+ros-jazzy-ros-gz, ros-jazzy-ros-gz-sim, ros-jazzy-ros-gz-bridge,
+ros-jazzy-gz-ros2-control
+
+WSL2 AG BAGLANTISI:
+- Windows'tan WSL2'ye (orn. rosbridge port 9090'a): `localhost:9090` calisir
+  (WSL2'nin localhost forwarding ozelligi sayesinde).
+- WSL2'den Windows'a (orn. Ollama'ya): `ip route show | grep default` ile
+  bulunan gateway IP'si kullanilir (orn. 172.31.208.1). Windows'taki Ollama'nin
+  `OLLAMA_HOST=0.0.0.0` ile calismasi GEREKIR, yoksa sadece 127.0.0.1'de
+  dinler ve WSL2'den erisilemez.
+
+WSL2 ARKA PLAN SURECLERI:
+Gazebo/rosbridge gibi uzun sureli surecler, onlari baslatan wsl.exe baglantisi
+tamamen kapanirsa sonlanabilir. Bu yuzden her birini KENDI ayri, acik kalan
+penceresinde/baglantisinda baslatmak gerekir (nohup+& arka plana alma tek
+basina yeterli olmuyor).

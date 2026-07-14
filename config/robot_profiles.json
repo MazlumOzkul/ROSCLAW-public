@@ -1,0 +1,113 @@
+{
+  "profiles": [
+    {
+      "name": "Gazebo Simulation",
+      "host": "localhost",
+      "port": 9090,
+      "robot_type": "gazebo_sim",
+      "velocity_limits": {
+        "max_linear": 0.5,
+        "max_angular": 1.0
+      },
+      "topic_allowlist": {
+        "publish": [
+          "/cmd_vel",
+          "/gripper/command",
+          "/arm/joint_trajectory",
+          "/head/cmd"
+        ],
+        "subscribe": [
+          "/scan",
+          "/odom",
+          "/camera/image_raw",
+          "/imu",
+          "/battery_state"
+        ]
+      },
+      "movement_style": "twist_stamped",
+      "notes": "",
+      "id": "6da2aea38f0d",
+      "created_at": 1783272191.5283573,
+      "last_connected_at": 1783860076.7802753
+    },
+    {
+      "name": "GH",
+      "host": "127.0.0.1",
+      "port": 9090,
+      "robot_type": "turtlebot3_real",
+      "velocity_limits": {
+        "max_linear": 0.22,
+        "max_angular": 2.5
+      },
+      "topic_allowlist": {
+        "publish": [
+          "/cmd_vel"
+        ],
+        "subscribe": [
+          "/scan",
+          "/odom",
+          "/imu",
+          "/battery_state"
+        ]
+      },
+      "movement_style": "twist_stamped",
+      "notes": "",
+      "id": "dc515497d54f",
+      "created_at": 1783860045.4089246,
+      "last_connected_at": 1783860050.424617
+    },
+    {
+      "name": "GH",
+      "host": "127.0.0.1",
+      "port": 9090,
+      "robot_type": "turtlebot3_real",
+      "velocity_limits": {
+        "max_linear": 0.22,
+        "max_angular": 2.5
+      },
+      "topic_allowlist": {
+        "publish": [
+          "/cmd_vel"
+        ],
+        "subscribe": [
+          "/scan",
+          "/odom",
+          "/imu",
+          "/battery_state"
+        ]
+      },
+      "movement_style": "twist_stamped",
+      "notes": "",
+      "id": "4ac298d3fecb",
+      "created_at": 1783860050.4261065,
+      "last_connected_at": 1783860055.4549348
+    },
+    {
+      "name": "GH",
+      "host": "127.0.0.1",
+      "port": 9090,
+      "robot_type": "turtlebot3_real",
+      "velocity_limits": {
+        "max_linear": 0.22,
+        "max_angular": 2.5
+      },
+      "topic_allowlist": {
+        "publish": [
+          "/cmd_vel"
+        ],
+        "subscribe": [
+          "/scan",
+          "/odom",
+          "/imu",
+          "/battery_state"
+        ]
+      },
+      "movement_style": "twist_stamped",
+      "notes": "",
+      "id": "84ba818a3e4b",
+      "created_at": 1783860050.4421153,
+      "last_connected_at": 1783860060.469538
+    }
+  ],
+  "active_id": "6da2aea38f0d"
+}

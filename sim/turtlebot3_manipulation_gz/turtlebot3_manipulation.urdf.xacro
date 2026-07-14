@@ -1,0 +1,62 @@
+<?xml version="1.0"?>
+<!--
+ROSClaw - turtlebot3_manipulation'in Gazebo Sim (ros_gz) portu.
+
+ROBOTIS'in resmi ros-jazzy-turtlebot3-manipulation-description paketi
+klasik Gazebo (gazebo_ros) eklentileri kullaniyor (libgazebo_ros_camera.so,
+libgazebo_ros_diff_drive.so, libgazebo_ros_ray_sensor.so, gazebo_ros2_control)
+- bunlarin hicbiri modern Gazebo Sim'de (ros_gz, bizim projemizin kullandigi)
+calismiyor. Bu dosya sadece GOVDE+KOL URDF'ini (simulatorden bagimsiz,
+oldugu gibi kullanilabilir) vendor paketten alir, ama sensor/aktuator
+taraflarini kendi gz-native portlarimizla degistirir:
+  - turtlebot3_waffle_pi_gz.gazebo.xacro (bu klasorde) -> diff-drive, lidar,
+    imu, kamera hepsi gz-sim-*-system eklentileriyle (burger robotunda
+    zaten kanitlanmis calisan pattern'in aynisi)
+  - arm_ros2_control.xacro (bu klasorde) -> sadece kol+gripper eklemleri,
+    gz_ros2_control::GazeboSimROS2ControlPlugin ile
+-->
+<robot name="turtlebot3_manipulation" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <xacro:arg name="prefix" default="" />
+  <xacro:arg name="use_sim" default="true" />
+
+  <!-- Materyaller - vendor paketten, simulatorden bagimsiz -->
+  <xacro:include filename="$(find turtlebot3_manipulation_description)/gazebo/materials.xacro" />
+
+  <!-- Govde + kol URDF'i - vendor paketten, saf URDF, simulatorden bagimsiz -->
+  <xacro:include filename="$(find turtlebot3_manipulation_description)/urdf/turtlebot3_waffle_pi.urdf.xacro" />
+  <xacro:include filename="$(find turtlebot3_manipulation_description)/urdf/open_manipulator_x.urdf.xacro" />
+
+  <!-- Kolun surtunme/materyal ozellikleri - vendor paketten, sadece
+       <transmission> (ros1 kalintisi, ros2_control tarafindan yok sayilir)
+       ve friction/material iceriyor, gz-native, sorun yok -->
+  <xacro:include filename="$(find turtlebot3_manipulation_description)/gazebo/open_manipulator_x.gazebo.xacro" />
+
+  <!-- Sensor/aktuator (diff-drive, lidar, imu, kamera) - BIZIM gz-native portumuz -->
+  <xacro:include filename="turtlebot3_waffle_pi_gz.gazebo.xacro" />
+
+  <!-- Kol+gripper icin ros2_control - BIZIM gz_ros2_control portumuz -->
+  <xacro:include filename="arm_ros2_control.xacro" />
+
+  <xacro:turtlebot3_waffle_pi prefix="$(arg prefix)" />
+  <xacro:turtlebot3_waffle_pi_gz prefix="$(arg prefix)" />
+
+  <!-- OpenManipulator-X'i govdeye sabitle (vendor'daki ile ayni pose) -->
+  <joint name="$(arg prefix)base_fixed" type="fixed">
+    <parent link="$(arg prefix)base_link"/>
+    <child link="$(arg prefix)link1"/>
+    <origin xyz="-0.092 0.0 0.091" rpy="0 0 0"/>
+  </joint>
+
+  <xacro:open_manipulator_x prefix="$(arg prefix)" />
+  <xacro:open_manipulator_x_gazebo prefix="$(arg prefix)" />
+
+  <xacro:arm_ros2_control_system
+    name="TurtleBot3ArmSystem" prefix="$(arg prefix)" />
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>/root/rosclaw_sim/arm_controller_manager.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

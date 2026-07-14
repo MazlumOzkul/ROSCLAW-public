@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ROSClaw - Robot Control Panel</title>
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --bg-panel: #14161c;
+    --bg-panel-2: #0d0e13;
+    --bg-hover: #1a1d24;
+    --border: #23262f;
+    --border-light: #2c303b;
+    --text: #e7e9ee;
+    --text-dim: #8b8fa3;
+    --text-faint: #565a68;
+    --accent: #22d3ee;
+    --accent-2: #818cf8;
+    --accent-hover: #06b6d4;
+    --accent-soft: rgba(34,211,238,0.10);
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
+    --danger-soft: rgba(239,68,68,0.12);
+    --success: #22c55e;
+    --success-soft: rgba(34,197,94,0.12);
+    --radius: 14px;
+    --radius-sm: 9px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scrollbar-color: #333 transparent; }
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #2a2d36; border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: #383c48; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 500px at 15% -10%, rgba(34,211,238,0.06), transparent 60%),
+      radial-gradient(900px 400px at 100% 0%, rgba(129,140,248,0.05), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: rgba(20,22,28,0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex; align-items: center; gap: 18px;
+    position: sticky; top: 0; z-index: 40;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; font-weight: 800; color: #061014;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset, 0 4px 14px rgba(34,211,238,0.25);
+  }
+  h1 { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; }
+  .subtitle { font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
+
+  .status-cluster { margin-left: auto; display: flex; gap: 18px; align-items: center; }
+  .status-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-dim); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #3a3d47;
+                box-shadow: 0 0 0 3px transparent; transition: box-shadow .2s, background .2s; }
+  .status-dot.ok { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+  .status-dot.err { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+  .v-divider { width: 1px; height: 20px; background: var(--border-light); }
+
+  #robot-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px 8px 10px;
+               background: var(--bg-hover); border: 1px solid var(--border-light); border-radius: 999px;
+               color: var(--text); font-size: 12.5px; font-weight: 500; cursor: pointer;
+               transition: background .15s, border-color .15s; }
+  #robot-btn:hover { background: #20232c; border-color: #3a3e4a; }
+  #robot-btn .dot { width: 8px; height: 8px; border-radius: 50%; background: #3a3d47; }
+  #robot-btn .dot.ok { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+  #robot-btn .dot.err { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+
+  .layout { display: grid; grid-template-columns: 1.3fr 1fr;
+            gap: 18px; padding: 22px; max-width: 1320px; margin: 0 auto; align-items: start; }
+
+  .panel { background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+           border: 1px solid var(--border); border-radius: var(--radius); padding: 18px;
+           box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 8px 24px rgba(0,0,0,0.18); }
+  .panel h2 { font-size: 12px; font-weight: 600; color: var(--text-dim);
+              text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px;
+              display: flex; align-items: center; gap: 8px; }
+  .panel h2::before { content: ''; width: 3px; height: 12px; border-radius: 2px;
+                       background: linear-gradient(180deg, var(--accent), var(--accent-2)); }
+
+  #estop { width: 100%; padding: 18px; font-size: 16px; font-weight: 800;
+           background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; border: none;
+           border-radius: var(--radius-sm); cursor: pointer; letter-spacing: 0.8px; margin-bottom: 10px;
+           box-shadow: 0 6px 18px rgba(220,38,38,0.28); transition: transform .1s, box-shadow .15s; }
+  #estop:hover { box-shadow: 0 8px 22px rgba(220,38,38,0.4); }
+  #estop:active { transform: scale(0.98); }
+  #estop .icon { margin-right: 6px; }
+  .release-btn { width: 100%; padding: 9px; background: transparent; color: var(--text-dim);
+        border: 1px solid var(--border-light); border-radius: var(--radius-sm);
+        cursor: pointer; font-size: 12px; transition: background .15s, color .15s; }
+  .release-btn:hover { background: var(--bg-hover); color: var(--text); }
+
+  .cmd-row { display: flex; gap: 8px; }
+  #chat-input, #search-input { flex: 1; padding: 11px 14px; background: var(--bg-panel-2);
+               border: 1px solid var(--border-light); border-radius: var(--radius-sm); color: var(--text);
+               font-size: 14px; transition: border-color .15s, box-shadow .15s; }
+  #chat-input:focus, #search-input:focus { outline: none; border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft); }
+  #chat-btn, #search-btn { padding: 10px 20px; background: linear-gradient(135deg, var(--accent-2), #6366f1);
+             color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 14px;
+             font-weight: 600; transition: filter .15s, transform .1s; }
+  #chat-btn:hover, #search-btn:hover { filter: brightness(1.1); }
+  #chat-btn:active, #search-btn:active { transform: scale(0.97); }
+  #chat-btn:disabled { background: #2a2d36; cursor: default; filter: none; }
+  .hint { font-size: 11.5px; color: var(--text-faint); margin-top: 10px; line-height: 1.5; }
+
+  /* Chat */
+  .chat-panel { display: flex; flex-direction: column; height: 580px; }
+  #chat-thread { flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+                 gap: 12px; padding: 4px 4px 14px; }
+  .msg-row { display: flex; animation: fadeIn .25s ease; }
+  .msg-row.user { justify-content: flex-end; }
+  .msg-row.bot { justify-content: flex-start; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .bubble { max-width: 78%; padding: 11px 15px; border-radius: 15px; font-size: 14px;
+            line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+  .msg-row.user .bubble { background: linear-gradient(135deg, var(--accent-2), #6366f1);
+        color: white; border-bottom-right-radius: 4px; }
+  .msg-row.bot .bubble { background: var(--bg-hover); border: 1px solid var(--border);
+        color: var(--text); border-bottom-left-radius: 4px; }
+  .bubble.pending { color: var(--text-faint); font-style: italic; }
+  .bubble .badge { display: inline-block; font-size: 10.5px; padding: 3px 9px;
+                    border-radius: 999px; margin-bottom: 7px; font-weight: 700; letter-spacing: 0.3px;
+                    text-transform: uppercase; }
+  .badge.ok { background: var(--success-soft); color: #4ade80; }
+  .badge.fail { background: var(--danger-soft); color: #f87171; }
+  .bubble .code-block { margin-top: 9px; background: var(--bg-panel-2); border: 1px solid var(--border);
+                         border-radius: 8px; padding: 10px 12px; font-family: 'SF Mono', Consolas, monospace;
+                         font-size: 12px; color: #9ca3af; overflow-x: auto; white-space: pre; }
+  .bubble .meta { font-size: 11px; color: var(--text-faint); margin-top: 7px; }
+
+  /* Log */
+  #log { height: 220px; overflow-y: auto; font-family: 'SF Mono', Consolas, monospace;
+         font-size: 11.5px; line-height: 1.7; }
+  .log-entry { padding: 4px 0; border-bottom: 1px solid #1b1d24; }
+  .log-allow { color: #4ade80; }
+  .log-block { color: #f87171; }
+  .log-info  { color: #7dd3fc; }
+  #skills-list { font-size: 13px; }
+  .skill-item { padding: 7px 0; border-bottom: 1px solid #1b1d24;
+                display: flex; justify-content: space-between; align-items: center; }
+  .skill-uses { color: var(--text-faint); font-size: 11px; background: var(--bg-panel-2);
+                padding: 2px 8px; border-radius: 999px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-box { background: var(--bg-panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+              padding: 12px; text-align: center; }
+  .stat-val { font-size: 23px; font-weight: 800;
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .stat-lbl { font-size: 10.5px; color: var(--text-faint); margin-top: 3px;
+              text-transform: uppercase; letter-spacing: 0.4px; }
+  #search-result { margin-top: 12px; font-size: 12px; color: #b6bac6;
+                   max-height: 170px; overflow-y: auto; white-space: pre-wrap;
+                   background: var(--bg-panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+                   padding: 11px; display: none; }
+  .toggle-row { display: flex; align-items: center; gap: 7px; margin-top: 10px; font-size: 12px; color: var(--text-dim); }
+  .toggle-row input { accent-color: var(--accent); }
+  .side-col { display: flex; flex-direction: column; gap: 18px; }
+  .empty-state { color: var(--text-faint); font-size: 13px; padding: 6px 0; }
+
+  /* Robot connect modal */
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(6,7,10,0.7);
+                     backdrop-filter: blur(3px); z-index: 50; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; animation: fadeIn .15s ease; }
+  .modal { background: var(--bg-panel); border: 1px solid var(--border-light); border-radius: 16px;
+           width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+           padding: 22px; box-shadow: 0 24px 60px rgba(0,0,0,0.5); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between;
+                  margin-bottom: 16px; }
+  .modal-header h3 { font-size: 16px; font-weight: 700; }
+  .modal-close { background: var(--bg-hover); border: 1px solid var(--border-light); color: var(--text-dim);
+                 font-size: 16px; width: 28px; height: 28px; border-radius: 50%;
+                 cursor: pointer; line-height: 1; transition: color .15s, background .15s; }
+  .modal-close:hover { color: #fff; background: #262a34; }
+  .robot-section { margin-bottom: 20px; }
+  .modal-divider { height: 1px; background: var(--border); margin: 4px 0 20px; }
+  .robot-section-title { font-size: 11.5px; color: var(--text-dim); text-transform: uppercase;
+                          letter-spacing: 0.6px; margin-bottom: 9px; display: flex;
+                          justify-content: space-between; align-items: center; font-weight: 600; }
+  .robot-row { display: flex; align-items: center; justify-content: space-between;
+               padding: 11px 13px; background: var(--bg-panel-2); border: 1px solid var(--border);
+               border-radius: var(--radius-sm); margin-bottom: 7px; font-size: 13px; }
+  .robot-row.active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .robot-row-info { display: flex; flex-direction: column; gap: 2px; }
+  .robot-row-name { font-weight: 600; }
+  .robot-row-sub { font-size: 11px; color: var(--text-faint); }
+  .robot-row-actions { display: flex; gap: 6px; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; font-weight: 600; border: none; border-radius: 7px;
+            cursor: pointer; transition: filter .15s, background .15s; }
+  .btn-sm.connect { background: linear-gradient(135deg, var(--accent-2), #6366f1); color: white; }
+  .btn-sm.connect:hover { filter: brightness(1.1); }
+  .btn-sm.danger { background: var(--danger-soft); color: #f87171; border: 1px solid rgba(239,68,68,0.25); }
+  .btn-sm.danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-sm.scan { background: var(--bg-hover); color: var(--text); border: 1px solid var(--border-light); }
+  .btn-sm.scan:hover { background: #22252e; }
+  .empty-hint { font-size: 12px; color: var(--text-faint); padding: 9px 0; }
+  .add-form { display: flex; flex-direction: column; gap: 9px; }
+  .add-form input, .add-form select { padding: 9px 11px; background: var(--bg-panel-2);
+        border: 1px solid var(--border-light); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; }
+  .add-form input:focus, .add-form select:focus { outline: none; border-color: var(--accent); }
+  .add-form-row { display: flex; gap: 8px; }
+  .add-form-row input { flex: 1; }
+  .save-connect-btn { padding: 11px; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-mark">R</div>
+    <div>
+      <h1>ROSClaw</h1>
+      <div class="subtitle">Robot Control Panel</div>
+    </div>
+  </div>
+  <div class="status-cluster">
+    <button id="robot-btn" onclick="openRobotModal()">
+      <span class="dot" id="robot-dot"></span>
+      <span id="robot-btn-label">Connect Robot</span>
+    </button>
+    <div class="v-divider"></div>
+    <div class="status-item">Ollama <div class="status-dot" id="dot-ollama"></div></div>
+    <div class="status-item">ROS2 <div class="status-dot" id="dot-ros2"></div></div>
+    <div class="status-item">E-Stop <div class="status-dot" id="dot-estop"></div></div>
+  </div>
+</header>
+
+<div class="modal-backdrop" id="robot-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Connect Robot</h3>
+      <button class="modal-close" onclick="closeRobotModal()">&times;</button>
+    </div>
+
+    <div class="robot-section">
+      <div class="robot-section-title">
+        <span>Discover on Network</span>
+        <button class="btn-sm scan" onclick="scanRobots()">Scan Network</button>
+      </div>
+      <div id="scan-results"><div class="empty-hint">Press "Scan Network" to find devices running rosbridge on your local network.</div></div>
+    </div>
+
+    <div class="robot-section">
+      <div class="robot-section-title"><span>Add Manually</span></div>
+      <div class="add-form">
+        <input id="new-robot-name" placeholder="Name (e.g. Unitree G1)">
+        <div class="add-form-row">
+          <input id="new-robot-host" placeholder="IP address (e.g. 192.168.1.50)">
+          <input id="new-robot-port" placeholder="Port" value="9090" style="max-width:90px">
+        </div>
+        <select id="new-robot-type">
+          <option value="generic">Generic ROS2 Robot</option>
+          <option value="gazebo_sim">Gazebo Simulation</option>
+          <option value="turtlebot3_real">TurtleBot3 (real)</option>
+          <option value="unitree_g1">Unitree G1 (humanoid)</option>
+        </select>
+        <button class="btn-sm connect save-connect-btn" onclick="addAndConnectRobot()">Save &amp; Connect</button>
+      </div>
+    </div>
+
+    <div class="modal-divider"></div>
+
+    <div class="robot-section" style="margin-bottom:0">
+      <div class="robot-section-title"><span>Saved Robots</span></div>
+      <div id="saved-robots"><div class="empty-hint">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+  <div>
+    <div class="panel" style="margin-bottom:18px">
+      <button id="estop" onclick="sendEstop()"><span class="icon">&#9888;</span>EMERGENCY STOP</button>
+      <button class="release-btn" onclick="releaseEstop()">Release E-Stop</button>
+    </div>
+    <div class="panel chat-panel">
+      <h2>Chat with ROSClaw</h2>
+      <div id="chat-thread"></div>
+      <div class="cmd-row">
+        <input id="chat-input" placeholder="Type: 'hello' or 'move forward 1 meter'..."
+               onkeydown="if(event.key==='Enter')sendChat()">
+        <button id="chat-btn" onclick="sendChat()">Send</button>
+      </div>
+      <div class="hint">
+        Give the robot a task ("move forward 1 meter", "turn left") or just chat
+        ("hello", "what can you do?") - ROSClaw figures out which one it is.
+      </div>
+    </div>
+  </div>
+
+  <div class="side-col">
+    <div class="panel">
+      <h2>System Status</h2>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-skills">0</div>
+          <div class="stat-lbl">Learned Skills</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-logs">0</div>
+          <div class="stat-lbl">Completed Tasks</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-model" style="font-size:14px">-</div>
+          <div class="stat-lbl">Active Model</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-env" style="font-size:14px">-</div>
+          <div class="stat-lbl">Environment</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Search Knowledge (RAG / Web)</h2>
+      <div class="cmd-row">
+        <input id="search-input" placeholder="e.g. how do I use cmd_vel?"
+               onkeydown="if(event.key==='Enter')sendSearch()">
+        <button id="search-btn" onclick="sendSearch()">Search</button>
+      </div>
+      <div class="toggle-row">
+        <input type="checkbox" id="use-web">
+        <label for="use-web">Also search the web (falls back to local RAG automatically if unavailable)</label>
+      </div>
+      <div id="search-result"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Live Audit Log</h2>
+      <div id="log"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Skill Library</h2>
+      <div id="skills-list"><div class="empty-state">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE = window.location.origin;
+let ws;
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s ?? '');
+  return d.innerHTML;
+}
+
+function connectWS() {
+  ws = new WebSocket(`ws://${location.host}/logs`);
+  ws.onmessage = e => addLog(JSON.parse(e.data));
+  ws.onclose = () => setTimeout(connectWS, 2000);
+}
+connectWS();
+
+function addLog(data) {
+  const log = document.getElementById('log');
+  const div = document.createElement('div');
+  const t = new Date().toTimeString().slice(0,8);
+  const type = data.type || 'info';
+  const cls = type === 'estop' ? 'log-block' :
+              type === 'command_result' && data.status === 'success' ? 'log-allow' :
+              type === 'command_result' ? 'log-block' : 'log-info';
+  div.className = `log-entry ${cls}`;
+  div.textContent = `${t} [${type}] ${data.instruction || data.message || JSON.stringify(data).slice(0,80)}`;
+  log.prepend(div);
+  if (log.children.length > 100) log.lastChild.remove();
+}
+
+function addChatBubble(who, html) {
+  const thread = document.getElementById('chat-thread');
+  const row = document.createElement('div');
+  row.className = `msg-row ${who}`;
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.innerHTML = html;
+  row.appendChild(bubble);
+  thread.appendChild(row);
+  thread.scrollTop = thread.scrollHeight;
+  return bubble;
+}
+
+function renderStepList(steps) {
+  return '<div class="meta" style="margin-top:8px">' + steps.map((s, i) => {
+    const ok = s.status === 'success' || s.status === 'chat';
+    const icon = ok ? '&#10003;' : '&#10007;';
+    return `${icon} ${i+1}. ${escapeHtml(s.instruction)}`;
+  }).join('<br>') + '</div>';
+}
+
+function renderBotReply(data) {
+  if (data.status === 'chat') {
+    return escapeHtml(data.reply);
+  }
+  // Compound/multi-step task result (split into sub-steps)
+  if (Array.isArray(data.steps) && data.steps.length > 1) {
+    if (data.status === 'success') {
+      let html = `<span class="badge ok">success</span><br>Completed the multi-step task (${data.total_steps} steps).`;
+      html += renderStepList(data.steps);
+      html += `<div class="meta">${data.elapsed ? data.elapsed.toFixed(1)+'s' : ''}</div>`;
+      return html;
+    }
+    if (data.status === 'partial_failure') {
+      let html = `<span class="badge fail">partial success</span><br>` +
+                 `${data.completed_steps}/${data.total_steps} steps completed, then stopped.`;
+      html += renderStepList(data.steps);
+      return html;
+    }
+  }
+  if (data.status === 'success') {
+    const source = data.source === 'cache' ? 'from memory' : 'newly generated';
+    let html = `<span class="badge ok">success</span><br>Task completed (${source}).`;
+    if (data.code) {
+      html += `<div class="code-block">${escapeHtml(data.code)}</div>`;
+    }
+    html += `<div class="meta">${data.elapsed ? data.elapsed.toFixed(1)+'s' : ''}</div>`;
+    return html;
+  }
+  if (data.status === 'failed') {
+    return `<span class="badge fail">failed</span><br>Could not complete this task (after 5 attempts). ` +
+           `Try rephrasing it differently or more simply.`;
+  }
+  return `<span class="badge fail">error</span><br>${escapeHtml(data.reason || data.message || 'An unexpected error occurred')}`;
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const btn = document.getElementById('chat-btn');
+  const instruction = input.value.trim();
+  if (!instruction) return;
+  input.value = '';
+  btn.disabled = true;
+
+  addChatBubble('user', escapeHtml(instruction));
+  const pending = addChatBubble('bot', '...');
+  pending.classList.add('pending');
+
+  try {
+    const r = await fetch(`${BASE}/command`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({instruction})
+    });
+    const data = await r.json();
+    pending.classList.remove('pending');
+    pending.innerHTML = renderBotReply(data);
+    addLog({type:'command_result', instruction, status: data.status, source: data.source});
+    loadSkills();
+  } catch(e) {
+    pending.classList.remove('pending');
+    pending.innerHTML = `<span class="badge fail">error</span><br>Connection error: ${escapeHtml(e.message)}`;
+  } finally {
+    btn.disabled = false;
+    input.focus();
+  }
+}
+
+async function sendSearch() {
+  const input = document.getElementById('search-input');
+  const query = input.value.trim();
+  if (!query) return;
+  const useWeb = document.getElementById('use-web').checked;
+  const box = document.getElementById('search-result');
+  box.style.display = 'block';
+  box.textContent = 'Searching...';
+  try {
+    const r = await fetch(`${BASE}/search`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({query, use_web: useWeb})
+    });
+    const data = await r.json();
+    box.textContent = `[source: ${data.source}]\n\n${data.result}`;
+  } catch(e) {
+    box.textContent = `Error: ${e.message}`;
+  }
+}
+
+async function sendEstop() {
+  await fetch(`${BASE}/stop`, {method:'POST'});
+  addLog({type:'estop', message:'E-STOP ACTIVE'});
+  addChatBubble('bot', '<span class="badge fail">e-stop</span><br>Emergency stop activated. All robot commands will be blocked.');
+}
+async function releaseEstop() {
+  await fetch(`${BASE}/estop/release`, {method:'POST'});
+  addLog({type:'info', message:'E-stop released'});
+  addChatBubble('bot', '<span class="badge ok">ready</span><br>E-stop released, the system is accepting commands again.');
+}
+
+async function updateStatus() {
+  try {
+    const r = await fetch(`${BASE}/status`);
+    const d = await r.json();
+    document.getElementById('dot-ollama').className = `status-dot ${d.ollama ? 'ok' : 'err'}`;
+    document.getElementById('dot-ros2').className = `status-dot ${d.ros2 ? 'ok' : 'err'}`;
+    document.getElementById('dot-estop').className = `status-dot ${d.estop ? 'err' : 'ok'}`;
+    document.getElementById('stat-skills').textContent = d.skills;
+    document.getElementById('stat-logs').textContent = d.logs;
+    document.getElementById('stat-env').textContent = d.estop ? 'STOPPED' : 'Ready';
+    document.getElementById('robot-dot').className = `dot ${d.ros2 ? 'ok' : 'err'}`;
+    document.getElementById('robot-btn-label').textContent = d.robot_name || 'Connect Robot';
+  } catch(e) {}
+}
+
+/* -------------------- Robot connection picker (WiFi-style) -------------------- */
+
+function openRobotModal() {
+  document.getElementById('robot-modal').classList.add('open');
+  loadSavedRobots();
+}
+function closeRobotModal() {
+  document.getElementById('robot-modal').classList.remove('open');
+}
+
+async function scanRobots() {
+  const box = document.getElementById('scan-results');
+  box.innerHTML = '<div class="empty-hint">Scanning... (this can take a few seconds)</div>';
+  try {
+    const r = await fetch(`${BASE}/robots/scan`);
+    const d = await r.json();
+    if (!d.found.length) {
+      box.innerHTML = '<div class="empty-hint">No device running rosbridge was found on the network. You can add one manually.</div>';
+      return;
+    }
+    box.innerHTML = d.found.map(f => `
+      <div class="robot-row">
+        <div class="robot-row-info">
+          <span class="robot-row-name">${escapeHtml(f.host)}:${f.port}</span>
+          <span class="robot-row-sub">${f.verified ? 'rosbridge verified' : 'port open, unverified'}
+            ${f.robot_type_guess ? ' &middot; guessed: ' + escapeHtml(f.robot_type_guess) : ''}</span>
+        </div>
+        <div class="robot-row-actions">
+          <button class="btn-sm connect" onclick="prefillFromScan('${escapeHtml(f.host)}', ${f.port}, '${f.robot_type_guess||'generic'}')">Use This</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    box.innerHTML = `<div class="empty-hint">Scan error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function prefillFromScan(host, port, typeGuess) {
+  document.getElementById('new-robot-host').value = host;
+  document.getElementById('new-robot-port').value = port;
+  const sel = document.getElementById('new-robot-type');
+  if ([...sel.options].some(o => o.value === typeGuess)) sel.value = typeGuess;
+  document.getElementById('new-robot-name').focus();
+}
+
+async function loadSavedRobots() {
+  const box = document.getElementById('saved-robots');
+  try {
+    const r = await fetch(`${BASE}/robots`);
+    const d = await r.json();
+    if (!d.profiles.length) {
+      box.innerHTML = '<div class="empty-hint">No saved robots yet.</div>';
+      return;
+    }
+    box.innerHTML = d.profiles.map(p => `
+      <div class="robot-row ${p.id === d.active_id ? 'active' : ''}">
+        <div class="robot-row-info">
+          <span class="robot-row-name">${escapeHtml(p.name)}</span>
+          <span class="robot-row-sub">${escapeHtml(p.host)}:${p.port} &middot; ${escapeHtml(p.robot_type)}</span>
+        </div>
+        <div class="robot-row-actions">
+          ${p.id === d.active_id
+            ? '<span class="robot-row-sub">Connected</span>'
+            : `<button class="btn-sm connect" onclick="connectRobot('${p.id}')">Connect</button>`}
+          <button class="btn-sm danger" onclick="deleteRobot('${p.id}')">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    box.innerHTML = `<div class="empty-hint">Error: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function connectRobot(profileId) {
+  const box = document.getElementById('saved-robots');
+  box.insertAdjacentHTML('afterbegin', '<div class="empty-hint">Connecting...</div>');
+  try {
+    const r = await fetch(`${BASE}/robots/${profileId}/connect`, {method:'POST'});
+    const d = await r.json();
+    addLog({type:'robot_switch', message: `Robot connection: ${d.profile?.name} (${d.connected ? 'success' : 'failed'})`});
+    addChatBubble('bot', d.connected
+      ? `<span class="badge ok">connected</span><br>Connected to ${escapeHtml(d.profile?.name)}.`
+      : `<span class="badge fail">failed to connect</span><br>Could not connect to ${escapeHtml(d.profile?.name)} - check the IP/port and that the robot is powered on.`);
+  } catch(e) {}
+  loadSavedRobots();
+  updateStatus();
+}
+
+async function deleteRobot(profileId) {
+  await fetch(`${BASE}/robots/${profileId}`, {method:'DELETE'});
+  loadSavedRobots();
+}
+
+async function addAndConnectRobot() {
+  const name = document.getElementById('new-robot-name').value.trim();
+  const host = document.getElementById('new-robot-host').value.trim();
+  const port = parseInt(document.getElementById('new-robot-port').value.trim() || '9090', 10);
+  const robot_type = document.getElementById('new-robot-type').value;
+  if (!name || !host) {
+    alert('Name and IP address are required.');
+    return;
+  }
+  try {
+    const r = await fetch(`${BASE}/robots`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, host, port, robot_type})
+    });
+    const d = await r.json();
+    await connectRobot(d.id);
+    document.getElementById('new-robot-name').value = '';
+    document.getElementById('new-robot-host').value = '';
+    document.getElementById('new-robot-port').value = '9090';
+  } catch(e) {
+    alert('Could not add robot: ' + e.message);
+  }
+}
+
+async function loadSkills() {
+  try {
+    const r = await fetch(`${BASE}/skills`);
+    const d = await r.json();
+    const el = document.getElementById('skills-list');
+    if (!d.skills.length) {
+      el.innerHTML = '<div class="empty-state">No skills yet. Give the first command!</div>';
+      return;
+    }
+    el.innerHTML = d.skills.slice(0,10).map(s =>
+      `<div class="skill-item">
+        <span>${escapeHtml(s.task)}</span>
+        <span class="skill-uses">${s.uses}x</span>
+       </div>`
+    ).join('');
+  } catch(e) {}
+}
+
+addChatBubble('bot', 'Hi! I\'m ROSClaw. You can give the robot a task ("move forward 1 meter") or just chat with me.');
+setInterval(updateStatus, 2000);
+setInterval(loadSkills, 5000);
+updateStatus();
+loadSkills();
+</script>
+</body>
+</html>

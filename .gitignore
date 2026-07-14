@@ -1,0 +1,23 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+skills/
+
+# Model weights - large, auto-downloaded on first use (see README)
+weights/
+*.pt
+
+# Generated logs/test-run artifacts - keep the .py scripts and reference
+# notes (ros2_cli_reference.txt, rosclaw_gotchas.txt), exclude run outputs
+logs/*.log
+logs/*.jsonl
+logs/*.png
+logs/*.jpg
+logs/*.pgm
+logs/*output*.txt
+logs/*_log.txt
+logs/*_log[0-9].txt
+logs/benchmark_report.json
+logs/gateway_run.log
+SETUP.md

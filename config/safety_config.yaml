@@ -1,0 +1,36 @@
+# ROSClaw Guvenlik Konfigurasyonu
+# Validator bu dosyayi okur - donanima gore degistir
+
+velocity_limits:
+  max_linear: 0.5        # m/s - simulasyon icin
+  max_angular: 1.0       # rad/s - simulasyon icin
+  # Gercek robot icin: max_linear: 0.3
+
+topic_allowlist:
+  publish:
+    - /cmd_vel
+    - /gripper/command
+    - /arm/joint_trajectory
+    - /head/cmd
+  subscribe:
+    - /scan
+    - /odom
+    - /camera/image_raw
+    - /imu/data
+    - /battery_state
+
+safety_zones:
+  lidar_stop_distance: 0.3   # metre - bu kadar yakin engel varsa ILERI HAREKETI BLOKLA (validator, ros2_publish oncesi)
+  lidar_slow_distance: 0.6   # bu kadar yakin engel varsa yavasla
+  lidar_emergency_stop_distance: 0.15  # bundan yakinsa TAM E-STOP tetiklenir - LLM'i beklemez, sensor callback'inden aninda tetiklenir ("refleks" katmani)
+
+arm_limits:
+  max_reach_m: 0.38    # OpenManipulator-X'in gercek erisim mesafesi (~0.34m) + pay
+  min_z_m: 0.02        # bunun altinda masaya/zemine carpma riski
+  max_z_m: 0.5         # kolun fiziksel olarak ulasabilecegi en yuksek nokta
+
+estop:
+  topic: /estop
+  hardware_topic: /estop_hw  # gercek robotta fiziksel e-stop
+
+environment: simulation     # simulation | real_robot

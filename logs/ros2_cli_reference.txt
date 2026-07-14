@@ -1,0 +1,46 @@
+ROS2 Jazzy CLI Komut Referansi
+
+TOPIC KOMUTLARI:
+ros2 topic list                          # tum topic'leri listele
+ros2 topic list -t                       # tip bilgisiyle birlikte listele
+ros2 topic info /cmd_vel -v              # bir topic'in tam tipini/publisher-subscriber sayisini goster
+ros2 topic echo /odom --field pose.pose.position --once   # tek mesaj oku, belirli alani goster
+ros2 topic echo /scan --once             # tek mesaj oku (tum alanlar)
+ros2 topic pub /cmd_vel geometry_msgs/msg/TwistStamped "{twist: {linear: {x: 0.2}}}" --once  # tek seferlik yayinla
+ros2 topic hz /scan                      # yayinlama frekansini olc
+
+INTERFACE (MESAJ TIPI) KOMUTLARI:
+ros2 interface show geometry_msgs/msg/TwistStamped   # mesaj alanlarini goster
+ros2 interface list | grep Twist         # ilgili mesaj tiplerini ara
+
+NODE KOMUTLARI:
+ros2 node list                           # calisan node'lari listele
+ros2 node info /robot_state_publisher    # bir node'un topic/servis baglantilarini goster
+
+SERVICE KOMUTLARI:
+ros2 service list                        # tum servisleri listele
+ros2 service call /reset_simulation std_srvs/srv/Empty   # servis cagir
+
+PAKET/ORTAM KOMUTLARI:
+ros2 pkg list                             # kurulu tum paketleri listele
+ros2 pkg prefix turtlebot3_gazebo         # bir paketin kurulu oldugu dizini bul
+source /opt/ros/jazzy/setup.bash          # ROS2 ortamini yukle (her terminalde gerekli)
+
+LAUNCH KOMUTLARI:
+ros2 launch turtlebot3_gazebo turtlebot3_world.launch.py   # Gazebo+TurtleBot3 simulasyonu baslat
+ros2 launch rosbridge_server rosbridge_websocket_launch.xml # rosbridge websocket sunucusu (port 9090)
+
+DEMO/TEST KOMUTLARI:
+ros2 run demo_nodes_py talker             # test yayincisi
+ros2 run demo_nodes_py listener           # test dinleyicisi
+
+ORTAM DEGISKENLERI (TurtleBot3):
+export TURTLEBOT3_MODEL=burger            # robot modelini sec (burger|waffle|waffle_pi)
+
+ROSBRIDGE (Python/roslibpy uzerinden JSON):
+Rosbridge, ROS2 topic/servislerini WebSocket uzerinden JSON mesajlarla disa
+acar (varsayilan port 9090). roslibpy kutuphanesi Python'dan bu WebSocket'e
+baglanip mesaj yayinlamayi/okumayi saglar - ROSClaw'in tools/ros2_tools.py
+dosyasi bunu kullanir. Mesaj JSON'a donusturulurken ROS2 mesaj tipindeki
+tum alanlarin (orn. TwistStamped icin "header" ve "twist") eksiksiz
+belirtilmesi onemlidir; eksik alanlar sessizce varsayilan (sifir) deger alir.

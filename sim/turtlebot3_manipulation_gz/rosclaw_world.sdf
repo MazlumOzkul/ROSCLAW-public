@@ -1,0 +1,95 @@
+<?xml version="1.0" ?>
+<!--
+ROSClaw - navigasyon testleri icin 3 odali basit ev plani.
+Gazebo Sim'in kendi empty.sdf'i TEMEL alinarak yazildi, ama iki KRITIK
+eksik eklendi: gz-sim-sensors-system (kamera/lidar gibi render-tabanli
+sensorler bu OLMADAN HICBIR VERI URETMEZ - sessizce, hata vermeden) ve
+gz-sim-imu-system. turtlebot3_gazebo/worlds/turtlebot3_world.world
+dosyasinda bu ikisi vardi, empty.sdf'te yoktu.
+
+Oda plani (x,y metre, dunya merkezli):
+  salon        : x -3..0,  y -3..3  (merkez -1.5, 0)   - robot burada baslar
+  mutfak       : x  0..3,  y  0..3  (merkez  1.5, 1.5)
+  yatak_odasi  : x  0..3,  y -3..0  (merkez  1.5,-1.5)
+Salon<->mutfak/yatak_odasi arasi x=0 duvarinda y=-0.5..0.5 kapi bosluğu.
+Mutfak<->yatak_odasi arasi y=0 duvarinda x=1.25..1.75 kapi bosluğu.
+-->
+<sdf version="1.6">
+  <world name="rosclaw_world">
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"></plugin>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"></plugin>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"></plugin>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"></plugin>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"></plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <attenuation>
+        <range>1000</range>
+        <constant>0.9</constant>
+        <linear>0.01</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry>
+          <material>
+            <ambient>0.8 0.8 0.8 1</ambient>
+            <diffuse>0.8 0.8 0.8 1</diffuse>
+            <specular>0.8 0.8 0.8 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Dis sinir duvarlari -->
+    <model name="wall_north"><static>true</static><pose>0 3.05 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>6.1 0.1 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>6.1 0.1 1.0</size></box></geometry><material><ambient>0.9 0.9 0.85 1</ambient><diffuse>0.9 0.9 0.85 1</diffuse></material></visual></link></model>
+    <model name="wall_south"><static>true</static><pose>0 -3.05 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>6.1 0.1 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>6.1 0.1 1.0</size></box></geometry><material><ambient>0.9 0.9 0.85 1</ambient><diffuse>0.9 0.9 0.85 1</diffuse></material></visual></link></model>
+    <model name="wall_west"><static>true</static><pose>-3.05 0 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>0.1 6.1 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.1 6.1 1.0</size></box></geometry><material><ambient>0.9 0.9 0.85 1</ambient><diffuse>0.9 0.9 0.85 1</diffuse></material></visual></link></model>
+    <model name="wall_east"><static>true</static><pose>3.05 0 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>0.1 6.1 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.1 6.1 1.0</size></box></geometry><material><ambient>0.9 0.9 0.85 1</ambient><diffuse>0.9 0.9 0.85 1</diffuse></material></visual></link></model>
+
+    <!-- Salon | mutfak+yatak_odasi bolme duvari (x=0), kapi bosluğu y=-0.8..0.8 (1.6m -
+         Nav2'nin varsayilan robot_radius=0.22m + inflation_radius ile guvenli gecis icin
+         genisletildi, ilk denemede 1m kapi + varsayilan sisirme robotu sikistirmisti) -->
+    <model name="wall_div1_north"><static>true</static><pose>0 1.9 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>0.1 2.2 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.1 2.2 1.0</size></box></geometry><material><ambient>0.85 0.8 0.7 1</ambient><diffuse>0.85 0.8 0.7 1</diffuse></material></visual></link></model>
+    <model name="wall_div1_south"><static>true</static><pose>0 -1.9 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>0.1 2.2 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.1 2.2 1.0</size></box></geometry><material><ambient>0.85 0.8 0.7 1</ambient><diffuse>0.85 0.8 0.7 1</diffuse></material></visual></link></model>
+
+    <!-- Mutfak | yatak_odasi bolme duvari (y=0, x=0..3), kapi bosluğu x=0.9..2.1 (1.2m) -->
+    <model name="wall_div2_west"><static>true</static><pose>0.45 0 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>0.9 0.1 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.9 0.1 1.0</size></box></geometry><material><ambient>0.85 0.8 0.7 1</ambient><diffuse>0.85 0.8 0.7 1</diffuse></material></visual></link></model>
+    <model name="wall_div2_east"><static>true</static><pose>2.55 0 0.5 0 0 0</pose>
+      <link name="link"><collision name="c"><geometry><box><size>0.9 0.1 1.0</size></box></geometry></collision>
+      <visual name="v"><geometry><box><size>0.9 0.1 1.0</size></box></geometry><material><ambient>0.85 0.8 0.7 1</ambient><diffuse>0.85 0.8 0.7 1</diffuse></material></visual></link></model>
+  </world>
+</sdf>

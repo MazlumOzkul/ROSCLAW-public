@@ -106,6 +106,27 @@ LiDAR dur mesafesi: 0.3 metre
         added = self.add_document(basics, "ros2_basics")
         print(f"[OK] ROS2 temel bilgisi eklendi ({added} parca)")
 
+    def add_reference_files(self, base_dir: str = "logs"):
+        """logs/ altindaki referans notlarini (ros2_cli_reference.txt,
+        ros2_interfaces.txt, rosclaw_gotchas.txt - hepsi depoda mevcut)
+        RAG deposuna isler. Bu dosyalar oturumlar boyunca biriken gercek
+        ROS2/Gazebo bilgisini icerir - onceden bir kerelik elle eklenmisti,
+        kod olarak kayitli degildi; bu yuzden yeni bir klonda search_docs
+        sadece add_ros2_basics'in tek parcasiyla kaliyordu. Bu fonksiyon
+        o kaybi gideriyor - fresh bir depoda da ayni RAG icerigini kurar."""
+        files = ["ros2_cli_reference.txt", "ros2_interfaces.txt", "rosclaw_gotchas.txt"]
+        total = 0
+        for fname in files:
+            path = Path(base_dir) / fname
+            if not path.exists():
+                continue
+            source = path.stem
+            content = path.read_text(encoding="utf-8")
+            added = self.add_document(content, source)
+            total += added
+            print(f"[OK] {fname} eklendi ({added} parca)")
+        return total
+
     def delete_source(self, source: str) -> int:
         """Bir kaynaga ait tum parcalari sil (icerik guncellenip yeniden
         eklenecekse eski/yanlis parcalarin kalmamasi icin kullan)."""

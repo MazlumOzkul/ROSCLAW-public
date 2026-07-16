@@ -17,6 +17,7 @@ def _get_kb() -> RAGKnowledgeBase:
         _kb = RAGKnowledgeBase()
         if _kb.stats()["total_documents"] == 0:
             _kb.add_ros2_basics()
+            _kb.add_reference_files()
     return _kb
 
 

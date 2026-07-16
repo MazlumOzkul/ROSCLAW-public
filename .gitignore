@@ -4,9 +4,14 @@ __pycache__/
 .venv/
 skills/
 
-# Model weights - large, auto-downloaded on first use (see README)
+# Model weights - large, auto-downloaded on first use (see README).
+# yolov8s-worldv2.pt (~25MB) is the exception: under GitHub's 100MB
+# per-file limit, so it's committed directly instead of relying on a
+# fresh download. weights/ (largest file alone is ~338MB) genuinely
+# exceeds the limit and can't be committed without Git LFS.
 weights/
 *.pt
+!yolov8s-worldv2.pt
 
 # Generated logs/test-run artifacts - keep the .py scripts and reference
 # notes (ros2_cli_reference.txt, rosclaw_gotchas.txt), exclude run outputs
